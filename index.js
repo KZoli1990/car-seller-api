@@ -73,44 +73,38 @@ app.post("/carsellerapi/v1/users", async (req, res) => {
     }
 });
 //register
+
 app.post("/carsellerapi/v1/users/signup", upload.single('avatar'), async (req, res) => {
     const {email, userName, password, firstName, lastName} = req.body;
-    try{
-        const check = await users.findOne({email:email});
-        const file = req.file.path;
+    try {
+        const check = await users.findOne({email: email});
+
         if (check) {
-            res.status(400).json("This email already exists...");
-        } 
-        if(file.length <= 1){
-            if(!check){
-            
-                const salt = await bcrypt.genSalt(10);
-                const hashedPassword = await bcrypt.hash(password, salt);
-                
-                const avatarPath = await cloudinary.uploader.upload(req.file.path);
-                const data = {
-                    userName: userName,
-                    avatar: avatarPath.secure_url,
-                    cloudinary_id: avatarPath.public_id,
-                    firstName: firstName,
-                    lastName: lastName,
-                    email: email,
-                    password:hashedPassword,
-                    createdAt: Date.now(),
-                };
-                
-                await users.insertMany([data]);
-                 res.status(201).json("Signup successful...");
-               
-            }
-        } else {
-            res.status(400).json("You can only have 1 profile picture...");
+            return res.status(400).json("This email already exists...");
         }
-       
-    
-    } catch(error){
-        res.status(500).json({ error: "Internal Server Error"});
-        console.log(error);
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        const avatarPath = await cloudinary.uploader.upload(req.file.path);
+
+        const data = {
+            userName: userName,
+            avatar: avatarPath.secure_url,
+            cloudinary_id: avatarPath.public_id,
+            firstName: firstName,
+            lastName: lastName,
+            email: email,
+            password: hashedPassword,
+            createdAt: Date.now(),
+        };
+
+        await users.insertMany([data]);
+        return res.status(201).json("Signup successful...");
+
+    } catch(error) {
+        console.error(error);
+        return res.status(500).json({ error: "Internal Server Error"});
     }
 });
 //actual user
